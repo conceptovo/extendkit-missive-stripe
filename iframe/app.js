@@ -1,7 +1,7 @@
-(async function() {
+(async function () {
   const app = document.getElementById('app');
 
-  const log = (...args)=>{ 
+  const log = (...args) => {
     const logElement = document.getElementById('log');
     logElement.innerHTML += `<div>${args.join(' ')}</div>`;
   };
@@ -12,12 +12,12 @@
       await Missive.storeSet('backend_url', '');
       dataCache = {};
       emailsList = [];
-      renderBackendForm();  
+      renderBackendForm();
       resolve();
-    }); 
+    });
   };
 
-  function setContent(html){ app.innerHTML = `<div class="padding">${html}</div>`; }
+  function setContent(html) { app.innerHTML = `<div class="padding">${html}</div>`; }
 
   function renderError(container, message, showReset = false) {
     let html = `<div class="card">Error: ${message}`;
@@ -25,7 +25,7 @@
       html += `<div class="row margin-top text-c"><a href="javascript:window.resetSettings();" class="button-secondary" style="text-decoration: none;">You can reset settings</a></div>`;
     }
     html += '</div>';
-    
+
     if (container) {
       container.innerHTML = html;
     } else {
@@ -33,18 +33,18 @@
     }
   }
 
-  function isValidUUIDv4(uuid) {
-    const uuidv4Regex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-    return uuidv4Regex.test(uuid);
+  function isValidKey(uuid) {
+    const uuidRegex = /^ek_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    return uuidRegex.test(uuid);
   }
 
-  if(!window.Missive){
+  if (!window.Missive) {
     setContent('<div class="card">Missive SDK not loaded. Please ensure <code>missive.js</code> is reachable.</div>');
     return;
   }
 
   // Render form to ask for backend URL and save it
-  function renderBackendForm(){
+  function renderBackendForm() {
     setContent(`
       <div class="tabs-container">
         <div class="columns-middle">
@@ -104,38 +104,37 @@
     document.getElementById('saveCustom').addEventListener('click', async () => await saveBackend('custom'));
   }
 
-  async function saveBackend()
-    {
-      const selectedTab = document.querySelector('#backendTabs .tab--selected').dataset.tab;
-      let config;
+  async function saveBackend() {
+    const selectedTab = document.querySelector('#backendTabs .tab--selected').dataset.tab;
+    let config;
 
-      if (selectedTab === 'hosted') {
-        const apiKey = document.getElementById('apiKeyInput').value.trim();
-        const apiKeyError = document.getElementById('apiKeyError');
-        apiKeyError.style.display = 'none';
+    if (selectedTab === 'hosted') {
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      const apiKeyError = document.getElementById('apiKeyError');
+      apiKeyError.style.display = 'none';
 
-        if (apiKey) {
-          if (isValidUUIDv4(apiKey)) {
-            config = { type: 'hosted', apiKey };
-          } else {
-            apiKeyError.textContent = 'Invalid API key format. Must be a valid UUIDv4 from our hosted backend. Don\'t put here a Stripe key. If you want to use your own backend, use the Custom Backend option and put your own URL and auth headers. Stripe key should be stored in your own backend in that case.';
-            apiKeyError.style.display = 'block';
-          }
-        }
-      } else {
-        const url = document.getElementById('backendUrlInput').value.trim().replace(/\/+$/, '');
-        const headerName = document.getElementById('headerNameInput').value.trim();
-        const headerValue = document.getElementById('headerValueInput').value.trim();
-        if (url && headerName && headerValue) {
-          config = { type: 'custom', url, headerName, headerValue };
+      if (apiKey) {
+        if (isValidKey(apiKey)) {
+          config = { type: 'hosted', apiKey };
+        } else {
+          apiKeyError.textContent = 'Invalid API key format. Must be a valid UUIDv4 from our hosted backend. Don\'t put here a Stripe key. If you want to use your own backend, use the Custom Backend option and put your own URL and auth headers. Stripe key should be stored in your own backend in that case.';
+          apiKeyError.style.display = 'block';
         }
       }
-
-      if (config) {
-        await Missive.storeSet('backend_config', config);
-        initConversationListener();
+    } else {
+      const url = document.getElementById('backendUrlInput').value.trim().replace(/\/+$/, '');
+      const headerName = document.getElementById('headerNameInput').value.trim();
+      const headerValue = document.getElementById('headerValueInput').value.trim();
+      if (url && headerName && headerValue) {
+        config = { type: 'custom', url, headerName, headerValue };
       }
     }
+
+    if (config) {
+      await Missive.storeSet('backend_config', config);
+      initConversationListener();
+    }
+  }
 
   async function getBackendConfig() {
     const config = await Missive.storeGet('backend_config');
@@ -169,13 +168,13 @@
     };
   }
 
-  function checkError(jsonResponse){
+  function checkError(jsonResponse) {
     if (jsonResponse.error) throw new Error(jsonResponse.error.message);
   }
 
-  async function ensureBackendURL(){
+  async function ensureBackendURL() {
     const url = await Missive.storeGet('backend_url');
-    if(!url){
+    if (!url) {
       const config = await Missive.storeGet('backend_config');
       if (config && config.type === 'custom' && config.url) {
         await Missive.storeSet('backend_config', { ...config, headerName: 'x-user-id', headerValue: 'test' });
@@ -197,7 +196,7 @@
     return ensureBackendURL();
   }
 
-  async function fetchStripeData(email, backendDetails){
+  async function fetchStripeData(email, backendDetails) {
     try {
       const domain = email.split('@')[1];
       const headers = getStripeHeaders(backendDetails.authHeaders);
@@ -287,28 +286,28 @@
   let dataCache = {}; // cache Stripe results by email address
   let emailsList = []; // current conversation unique email list
 
-  function renderData(result, selectedEmailObj){
+  function renderData(result, selectedEmailObj) {
     const container = document.getElementById('emailTabContent');
-    if(!container){
+    if (!container) {
       // Fallback (should not happen)
       setContent('<div class="card">Unable to render details.</div>');
       return;
     }
 
-    if(result.status === 'not_found'){
+    if (result.status === 'not_found') {
       container.innerHTML = `<div class="card">No Stripe customer found for <strong>${selectedEmailObj.address}</strong>.</div>`;
       return;
     }
 
-    if(result.status === 'error'){
+    if (result.status === 'error') {
       renderError(container, result.message, true);
       return;
     }
 
     // Helper to build customer detail HTML – extracted from previous implementation
-    function buildCustomerHtml(customer, subscriptions, payments, products){
+    function buildCustomerHtml(customer, subscriptions, payments, products) {
       let subsHtml = '<div class="columns-justify"><div class="text-d">None</div></div>';
-      if(subscriptions && subscriptions.length){
+      if (subscriptions && subscriptions.length) {
         subsHtml = '';
         subscriptions.forEach(s => {
           subsHtml += `<div class="columns-justify">`;
@@ -328,11 +327,11 @@
       }
 
       let payHtml = '<div class="columns-justify"><div class="text-d">None</div></div>';
-      if(payments && payments.length){  
+      if (payments && payments.length) {
         payHtml = '';
         payments.forEach(p => {
           payHtml += `<div class="columns-justify padding-xsmall">`;
-          payHtml += `<div>${(p.total/100).toFixed(2)} ${p.currency.toUpperCase()}<br/>${new Date(p.created*1000).toLocaleDateString()}</div>`;
+          payHtml += `<div>${(p.total / 100).toFixed(2)} ${p.currency.toUpperCase()}<br/>${new Date(p.created * 1000).toLocaleDateString()}</div>`;
           payHtml += `<a href="javascript:window.Missive.openURL('https://dashboard.stripe.com/invoices/${p.id}')"><svg style="width: 16px; height: 16px;" id="external" viewBox="0 0 24 24">
                 <path
                     d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z">
@@ -367,8 +366,8 @@
     // ------------------------------------------------------------------
     // Multiple customers found
     // ------------------------------------------------------------------
-    if(Array.isArray(result.customers)){
-      const customersHtml = result.customers.map(({customer, subscriptions, payments, products}) => {
+    if (Array.isArray(result.customers)) {
+      const customersHtml = result.customers.map(({ customer, subscriptions, payments, products }) => {
         return `<div class="card row">${buildCustomerHtml(customer, subscriptions, payments, products)}</div>`;
       }).join('');
 
@@ -384,13 +383,13 @@
     //container.innerHTML = `<div class="row">${buildCustomerHtml(customer, subscriptions, payments, products)}</div>`;
   }
 
-  async function loadEmail(emailObj){
+  async function loadEmail(emailObj) {
     const container = document.getElementById('emailTabContent');
-    if(!container) return;
+    if (!container) return;
 
     container.innerHTML = '<div class="card">Loading…</div>';
 
-    if(dataCache[emailObj.address]){
+    if (dataCache[emailObj.address]) {
       renderData(dataCache[emailObj.address], emailObj);
       return;
     }
@@ -410,9 +409,9 @@
     renderData(result, emailObj);
   }
 
-  function renderTabHeader(emailObj){
+  function renderTabHeader(emailObj) {
     const header = document.getElementById('emailTabHeader');
-    if(!header) return;
+    if (!header) return;
     header.innerHTML = `
       <div class="columns-middle">
         <span class="text-d margin-right-medium"><svg style="width: 34px; height: 34px;" viewBox="0 0 24 24"><path
@@ -424,7 +423,7 @@
     `;
   }
 
-  function renderTabsUI(emails, selectedAddress){
+  function renderTabsUI(emails, selectedAddress) {
     const tabsHtml = emails.map(e => {
       const label = (e.name || e.address)[0].toUpperCase();
       const title = e.name ? `${e.name} <${e.address}>` : e.address;
@@ -464,7 +463,7 @@
         tabEl.classList.add('tab--selected');
         const addr = tabEl.dataset.email;
         const emailObj = emails.find(e => e.address === addr);
-        if(emailObj){
+        if (emailObj) {
           loadEmail(emailObj);
           renderTabHeader(emailObj);
         }
@@ -472,8 +471,8 @@
     });
   }
 
-  async function handleConversationChange(ids){
-    if(!ids || ids.length !== 1){
+  async function handleConversationChange(ids) {
+    if (!ids || ids.length !== 1) {
       setContent('<div class="card">Select a single conversation to see Stripe details.</div>');
       return;
     }
@@ -483,7 +482,7 @@
 
     setContent('<div class="card">Loading…</div>');
 
-    try{
+    try {
       const conversations = await Missive.fetchConversations(ids);
       // const message = conversations[0].latest_message;
       // if(!message || !message.from_field){
@@ -492,7 +491,7 @@
 
       const emailObjs = Missive.getEmailAddresses(conversations);
 
-      if(!emailObjs.length){
+      if (!emailObjs.length) {
         setContent('<div class="card">No email address found in conversation!</div>');
         return;
       }
@@ -502,17 +501,17 @@
 
       renderTabsUI(emailObjs, emailObjs[0]);
       loadEmail(emailObjs[0]);
-    }catch(e){
+    } catch (e) {
       log(e);
       renderError(null, 'Error while reading conversation.');
     }
   }
 
-  function initConversationListener(){
+  function initConversationListener() {
     // Hook into Missive conversation changes immediately
-    function extractIds(convs){
-      if(!Array.isArray(convs)) return [];
-      return convs.map(c=> (typeof c === 'string' ? c : c.id)).filter(Boolean);
+    function extractIds(convs) {
+      if (!Array.isArray(convs)) return [];
+      return convs.map(c => (typeof c === 'string' ? c : c.id)).filter(Boolean);
     }
 
     // Listener triggered whenever selection changes in Missive
@@ -524,7 +523,7 @@
     // Run once with the current state if available
     if (Missive.state && Array.isArray(Missive.state.conversations)) {
       const currentIds = extractIds(Missive.state.conversations);
-      if(currentIds.length){
+      if (currentIds.length) {
         handleConversationChange(currentIds);
       }
     }
