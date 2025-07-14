@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stripe Customer Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://integrations.missiveapp.com/missive.js"></script>
+  <link href="https://integrations.missiveapp.com/missive.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family, sans-serif);
+    }
+    .card {
+      border: 1px solid var(--border-color, #e0e0e0);
+      border-radius: 6px;
+      padding: 12px;
+      background: var(--background-secondary, #fff);
+    }
+    .row { margin-bottom: 8px; }
+    .label { color: var(--text-secondary); }
+    .value { font-weight: 500; }
+    button.missive-btn {
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+    
+  <div id="container">
+    <div id="app">Loading…</div>
+  </div>
+
+  <div id="log" style="display: none;"></div>
+  <!-- <script src="app.js"></script> -->
+   <script>
+    (async function () {
+    const file = await fetch('app.js');
+    const text = await file.text();
+    const random = Math.random().toString(36).substring(2, 15);
+    
+    const script = document.createElement('script')
+    script.src = `app.js?${random}`
+    
+    document.body.append(script)
+    }());
+    </script>
+</body>
+</html> 
